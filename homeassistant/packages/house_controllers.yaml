@@ -1,0 +1,137 @@
+# Home Assistant package. Copy to <config>/packages/ and enable with:
+#   homeassistant:
+#     packages: !include_dir_named packages
+
+template:
+  - sensor:
+        - name: "power_bedroom_relay_2"
+          unique_id: power_bedroom_relay_2
+          unit_of_measurement: "W"
+          device_class: power
+          state_class: measurement
+          state: >
+            {% if is_state('switch.bedroomcontroller_relay_2', 'on') %}
+              45
+            {% else %}
+              0
+            {% endif %}
+
+sensor:
+  - platform: integration
+    source: sensor.0x286d97000100dcfe_power
+    name: energia_plug_0x286d
+    unit_prefix: k
+    round: 3
+    method: left
+
+  - platform: integration
+    source: sensor.power_bedroom_relay_2
+    name: "Bedroom Relay 2 Energy"
+    unique_id: bedroom_relay_2_energy
+    unit_prefix: k
+    round: 3
+    method: left
+
+homeassistant:
+  customize:
+    sensor.energia_plug_0x286d:
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: kWh
+
+    sensor.bedroom_relay_2_energy:
+      device_class: energy
+      state_class: total_increasing
+
+automation:
+  - id: '1774482657471'
+    alias: Refrigerator Water Pump Controller
+    description: ''
+    triggers:
+    - type: power
+      device_id: 79b5c2d63f4070ee36862f762ae26c2f
+      entity_id: 5f1a7df5661c67916addebec4fd1e3d3
+      domain: sensor
+      trigger: device
+      above: 1.5
+      for:
+        hours: 0
+        minutes: 2
+        seconds: 0
+    conditions: []
+    actions:
+    - type: turn_off
+      device_id: 79b5c2d63f4070ee36862f762ae26c2f
+      entity_id: 0ca05a03d15a4394e62cba31692474b7
+      domain: switch
+    mode: single
+  - id: '1774486783343'
+    alias: Reiniciar router si se cae internet
+    triggers:
+    - entity_id: binary_sensor.8_8_8_8
+      to: 'off'
+      for: 00:05:00
+      trigger: state
+    conditions:
+    - condition: state
+      entity_id: switch.0x282c02bfffeb7e6a
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.internet_reboot_lock
+      state: 'off'
+    actions:
+    - target:
+        entity_id: input_boolean.internet_reboot_lock
+      action: input_boolean.turn_on
+    - target:
+        entity_id: switch.0x282c02bfffeb7e6a
+      action: switch.turn_off
+    - delay: 00:00:15
+    - target:
+        entity_id: switch.0x282c02bfffeb7e6a
+      action: switch.turn_on
+    - delay: 00:15:00
+    - target:
+        entity_id: input_boolean.internet_reboot_lock
+      action: input_boolean.turn_off
+    mode: single
+  - id: '1774585953832'
+    alias: Foco auto Sunrise
+    description: ''
+    triggers:
+    - trigger: sun
+      event: sunrise
+      offset: '-1:00:00'
+    conditions: []
+    actions:
+    - type: turn_off
+      device_id: c7fcac697b29c7c6e342d68480f7b611
+      entity_id: 5bbab355d2b16e94e4ae10c2c67c5177
+      domain: light
+    - type: turn_off
+      device_id: 2d013b8e12f73c0e4d3df3f33e1838c3
+      entity_id: c3bf93f6b24cd37d232fdb6f9c84e762
+      domain: switch
+    mode: single
+  - id: '1774586135639'
+    alias: Foco auto Sun sets
+    description: ''
+    triggers:
+    - trigger: sun
+      event: sunset
+    conditions: []
+    actions:
+    - type: turn_on
+      device_id: c7fcac697b29c7c6e342d68480f7b611
+      entity_id: 5bbab355d2b16e94e4ae10c2c67c5177
+      domain: light
+    - type: turn_on
+      device_id: 2d013b8e12f73c0e4d3df3f33e1838c3
+      entity_id: c3bf93f6b24cd37d232fdb6f9c84e762
+      domain: switch
+    mode: single
+
+input_boolean:
+  internet_reboot_lock:
+    name: " internet_reboot_lock"
+    icon: "mdi:ip"
